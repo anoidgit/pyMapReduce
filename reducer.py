@@ -118,9 +118,6 @@ def cacheManager(reader, writer, bsize, bubsize, connects):
 		sendTERM(connect)
 	runsgn = False
 
-def startCacheManager(reader, writer, bsize, bubsize, connects):
-	return [starthread(cacheManager, (reader, writer, bsize, bubsize, connects)), starthread(saver, (writer,))]
-
 def startReduce(mapperc):
 	return starthread(oneReducer, (mapperc,))
 
@@ -130,12 +127,10 @@ def loadReducer(args):
 	reader, writer = getio(srcdf, rsdf)
 	bsize, bubsize, nthread = [int(i) for i in args[2:5]]
 	connects = getsockets(args[5:])
-	tpool = []
-	tpool.extend(startCacheManager(reader, writer, bsize, bubsize, connects))
+	tpool = [starthread(saver, (writer,))]
 	for i in xrange(nthread):
 		tpool.append(startReduce(infgen(connects)))
-	for tu in tpool:
-		tu.join()
+	cacheManager(reader, writer, bsize, bubsize, connects)
 
 if __name__ == "__main__":
 	srccache = {}
