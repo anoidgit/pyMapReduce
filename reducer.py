@@ -53,6 +53,9 @@ def processUnit(socket, data):
 	socket.send(json.dumps(data))
 	return json.loads(socket.recv())
 
+def sendTERM(connect):
+	return processUnit(connect, "TERM")
+
 def loadcache(reader, bubsize, bsize):
 	rs=[]
 	cache=[]
@@ -80,11 +83,8 @@ def writecache(writer, cache):
 		writer.write(cu)
 
 def oneReducer(mapperl):
-	global srccache
-	global rscache
-	global idlck
-	global idpool
-	while True:
+	global srccache, rscache, idlck, idpool, runsgn
+	while runsgn:
 		if idpool:
 			with idlck:
 				if idpool:
@@ -92,15 +92,15 @@ def oneReducer(mapperl):
 					rscache[doid] = processUnit(mapperl.next(), srccache[doid])
 
 def saver(writer):
-	global wcache
-	while True:
+	global wcache, runsgn
+	while runsgn:
 		if wcache:
 			writecache(writer, wcache)
 			print wcache
 			wcache = []
 
-def cacheManager(reader, writer, bsize, bubsize):
-	global srccache, rscache, idpool, nsavd, wcache
+def cacheManager(reader, writer, bsize, bubsize, connects):
+	global srccache, rscache, idpool, nsavd, wcache, runsgn
 	for cache in loadcache(reader, bubsize, bsize):
 		rscache = {}
 		srccache = trand(cache)
@@ -110,24 +110,30 @@ def cacheManager(reader, writer, bsize, bubsize):
 			pass
 		wcache = tranl(rscache)
 	writer.close()
+	for connect in connects:
+		sendTERM(connect)
+	runsgn = False
 	sys.exit()
 
-def startCacheManager(reader, writer, bsize, bubsize):
-	return [starthread(cacheManager, (reader, writer, bsize, bubsize)), starthread(saver, (writer,))]
+def startCacheManager(reader, writer, bsize, bubsize, connects):
+	return [starthread(cacheManager, (reader, writer, bsize, bubsize, connects)), starthread(saver, (writer,))]
 
 def startReduce(mapperc):
 	return starthread(oneReducer, (mapperc,))
 
 def loadReducer(args):
+	global runsgn
 	srcdf, rsdf = args[:2]
 	reader, writer = getio(srcdf, rsdf)
 	bsize, bubsize, nthread = [int(i) for i in args[2:5]]
-	mappers = infgen(getsockets(args[5:]))
+	connects = getsockets(args[5:])
+	mappers = infgen(connects)
 	tpool = []
-	tpool.extend(startCacheManager(reader, writer, bsize, bubsize))
+	tpool.extend(startCacheManager(reader, writer, bsize, bubsize, connects))
 	for i in xrange(nthread):
 		tpool.append(startReduce(mappers))
-	tpool[0].join()
+	while runsgn:
+		pass
 
 if __name__ == "__main__":
 	srccache = {}
@@ -135,4 +141,5 @@ if __name__ == "__main__":
 	rscache = {}
 	wcache = []
 	idlck = threading.Lock()
+	runsgn = True
 	loadReducer(decodelist(sys.argv[1:]))
