@@ -67,12 +67,12 @@ def loadcache(reader, bubsize, bsize):
 	for ru in reader:
 		cache.append(ru)
 		curldcache += 1
-		if curldcache == bubsize:
+		if curldcache is bubsize:
 			rs.append(cache)
 			cache = []
 			curldcache = 0
 			curldrs += 1
-			if curldrs == bsize:
+			if curldrs is bsize:
 				yield rs
 				rs = []
 				curldrs = 0
@@ -132,7 +132,7 @@ def loadReducer(args):
 		tpool.append(startReduce(infgen(connects)))
 	cacheManager(reader, writer, bsize, bubsize, connects)
 
-if __name__ == "__main__":
+if __name__ is "__main__":
 	srccache = {}
 	idpool = set()
 	rscache = {}
