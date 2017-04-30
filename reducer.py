@@ -24,11 +24,11 @@ def trand(lin):
 def tranl(din):
 	rs = []
 	for i in xrange(len(din)):
-		rs.append(din[i])
+		rs.extend(din[i])
 	return rs
 
 def starthread(func, argv, run=True):
-	t = threading.Thread(func, args=argv)
+	t = threading.Thread(target=func, args=argv)
 	t.setDaemon(True)
 	if run:
 		t.start()
@@ -70,14 +70,14 @@ def loadcache(reader, bubsize, bsize):
 				yield rs
 				rs = []
 				curldrs = 0
-	if cache:
-		rs.append(cache)
+	if rs:
+		if cache:
+			rs.append(cache)
 		yield rs
 
 def writecache(writer, cache):
 	for cu in cache:
-		for u in cu:
-			writer.write(cu)
+		writer.write(cu)
 
 def oneReducer(mapperl):
 	global srccache
@@ -85,20 +85,18 @@ def oneReducer(mapperl):
 	global idlck
 	global idpool
 	while True:
-		while idpool:
-			for mapper in mapperl:
-				doid = False
-				with idlck:
-					if idpool:
-						doid = idpool.pop()
-				if doid:
-					rscache[doid] = processUnit(mapper, srccache[doid])
+		if idpool:
+			with idlck:
+				if idpool:
+					doid = idpool.pop()
+					rscache[doid] = processUnit(mapperl.next(), srccache[doid])
 
 def saver(writer):
 	global wcache
 	while True:
 		if wcache:
 			writecache(writer, wcache)
+			print wcache
 			wcache = []
 
 def cacheManager(reader, writer, bsize, bubsize):
@@ -108,20 +106,21 @@ def cacheManager(reader, writer, bsize, bubsize):
 		srccache = trand(cache)
 		lsrc = len(cache)
 		idpool = set([i for i in xrange(lsrc)])
-		while len(rscache) != lsrc and wcache:
+		while len(rscache) != lsrc or wcache:
 			pass
 		wcache = tranl(rscache)
 	writer.close()
 	sys.exit()
 
 def startCacheManager(reader, writer, bsize, bubsize):
-	return [starthread(cacheManager, (reader, writer, bsize, bubsize)), starthread(saver, (writer))]
+	return [starthread(cacheManager, (reader, writer, bsize, bubsize)), starthread(saver, (writer,))]
 
 def startReduce(mapperc):
-	return starthread(oneReducer, (mapperc))
+	return starthread(oneReducer, (mapperc,))
 
 def loadReducer(args):
-	reader, writer = getio(args[:2])
+	srcdf, rsdf = args[:2]
+	reader, writer = getio(srcdf, rsdf)
 	bsize, bubsize, nthread = [int(i) for i in args[2:5]]
 	mappers = infgen(getsockets(args[5:]))
 	tpool = []
