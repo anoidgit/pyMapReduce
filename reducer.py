@@ -89,17 +89,18 @@ def oneReducer(mapperl):
 	global srccache, rscache, idlck, idpool, runsgn
 	while runsgn:
 		if idpool:
+			doid = False
 			with idlck:
 				if idpool:
 					doid = idpool.pop()
-					rscache[doid] = processUnit(mapperl.next(), srccache[doid])
+			if doid:
+				rscache[doid] = processUnit(mapperl.next(), srccache[doid])
 
 def saver(writer):
 	global wcache, runsgn
 	while runsgn:
 		if wcache:
 			writecache(writer, wcache)
-			print wcache
 			wcache = []
 
 def cacheManager(reader, writer, bsize, bubsize, connects):
