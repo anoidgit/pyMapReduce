@@ -6,7 +6,9 @@ import zmq, json
 
 import threading
 
-from mrmethods import getio
+import reducecore
+
+getio = reducecore.getio
 
 def decodelist(lin, decm="utf-8"):
 	return [lu.decode(decm) for lu in lin]
@@ -60,10 +62,12 @@ def loadcache(reader, bubsize, bsize):
 		if curldcache == bubsize:
 			rs.append(cache)
 			cache = []
+			curldcache = 0
 			curldrs += 1
 			if curldrs == bsize:
 				yield rs
 				rs = []
+				curldrs = 0
 	if cache:
 		rs.append(cache)
 		yield rs
@@ -115,14 +119,14 @@ def startReduce(mapperc):
 
 def loadReducer(args):
 	reader, writer = getio(args[:2])
-	bsize = int(args[2])
-	bubsize = int(args[3])
-	nthread = int(args[4])
+	bsize, bubsize, nthread = [int(i) for i in args[2:5]]
 	mappers = feedmapper(getsockets(args[5:]))
 	tpool = []
 	tpool.extend(startCacheManager(reader, writer, bsize, bubsize))
 	for i in xrange(nthread):
 		tpool.append(startReduce(mappers))
+	for tu in tpool:
+		tu.join()
 
 if __name__ == "__main__":
 	srccache = {}
