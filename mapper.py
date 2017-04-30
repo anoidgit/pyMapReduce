@@ -10,6 +10,8 @@ mapfunc = mapcore.mapfunc
 
 def loadServer(bindaddr):
 	socket = zmq.Context().socket(zmq.PUB)
+	if not bindaddr.startswith("tcp://"):
+		bindaddr = "tcp://"+bindaddr
 	socket.bind(bindaddr)
 	while True:
 		socket.send(json.dumps(mapfunc(json.loads(socket.recv()))))
