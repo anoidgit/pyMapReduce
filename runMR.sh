@@ -1,5 +1,8 @@
 #!/bin/bash
 
+srcfile = weibo.txt
+rsfile = segrs.txt
+
 cachebatch = 72
 batchperunit = 36
 nthreads = 6
@@ -14,7 +17,7 @@ python mapper.pyo 127.0.0.1:20004 &
 python mapper.pyo 127.0.0.1:20005 &
 python mapper.pyo 127.0.0.1:20006 &
 
-python reducer.pyo weibo.txt segrs.txt $cachebatch $batchperunit $nthreads 127.0.0.1:20001 127.0.0.1:20002 127.0.0.1:20003 127.0.0.1:20004 127.0.0.1:20005 127.0.0.1:20006
+python reducer.pyo $srcfile $rsfile $cachebatch $batchperunit $nthreads 127.0.0.1:20001 127.0.0.1:20002 127.0.0.1:20003 127.0.0.1:20004 127.0.0.1:20005 127.0.0.1:20006
 
 # Warning: this command will kill all python process, better comment it
 #pkill python
