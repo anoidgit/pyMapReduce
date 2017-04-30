@@ -35,7 +35,7 @@ def starthread(func, argv, run=True):
 	return t
 
 def infgen(lin):
-	while True:
+	while 1:
 		for lu in lin:
 			yield lu
 
@@ -138,5 +138,5 @@ if __name__ == "__main__":
 	rscache = {}
 	wcache = []
 	idlck = threading.Lock()
-	runsgn = True
+	runsgn = 1
 	loadReducer(decodelist(sys.argv[1:]))
