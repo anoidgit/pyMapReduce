@@ -53,8 +53,11 @@ def processUnit(socket, data):
 	socket.send(json.dumps(data))
 	return json.loads(socket.recv())
 
+def sendCommand(connect, cmd):
+	return processUnit(connect, cmd)
+
 def sendTERM(connect):
-	return processUnit(connect, "TERM")
+	return sendCommand(connect, "TERM")
 
 def loadcache(reader, bubsize, bsize):
 	rs=[]
@@ -113,7 +116,6 @@ def cacheManager(reader, writer, bsize, bubsize, connects):
 	for connect in connects:
 		sendTERM(connect)
 	runsgn = False
-	sys.exit()
 
 def startCacheManager(reader, writer, bsize, bubsize, connects):
 	return [starthread(cacheManager, (reader, writer, bsize, bubsize, connects)), starthread(saver, (writer,))]
@@ -127,13 +129,12 @@ def loadReducer(args):
 	reader, writer = getio(srcdf, rsdf)
 	bsize, bubsize, nthread = [int(i) for i in args[2:5]]
 	connects = getsockets(args[5:])
-	mappers = infgen(connects)
 	tpool = []
 	tpool.extend(startCacheManager(reader, writer, bsize, bubsize, connects))
 	for i in xrange(nthread):
-		tpool.append(startReduce(mappers))
-	while runsgn:
-		pass
+		tpool.append(startReduce(infgen(connects)))
+	for tu in tpool:
+		tu.join()
 
 if __name__ == "__main__":
 	srccache = {}
