@@ -4,10 +4,9 @@ from thulac import thulac
 
 segger = thulac(deli='/')
 
-def segline(strin):
-	global segger
+def segline(strin, segger):
 	try:
-		tmp = tmp.encode("utf-8")
+		tmp = strin.encode("utf-8")
 		tmp = segger.cut(tmp, text=True)
 		rs = tmp.decode("utf-8")
 	except:
@@ -15,9 +14,10 @@ def segline(strin):
 	return rs
 
 def mapfunc(bin):
+	global segger
 	rs = []
 	for bu in bin:
-		tmp = segline(bu)
-		if bu:
-			rs.append(bu)
+		tmp = segline(bu, segger)
+		if tmp:
+			rs.append(tmp)
 	return rs
