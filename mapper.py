@@ -2,7 +2,12 @@
 
 import sys
 
-import zmq, json
+import zmq
+
+try:
+	import msgpack as stool
+except:
+	import json as stool
 
 import mapcore
 
@@ -17,10 +22,10 @@ def loadServer(bindaddr):
 		req = json.loads(socket.recv())
 		if isinstance(req, str) or isinstance(req, unicode):
 			if req.lower().startswith("term"):
-				socket.send(json.dumps("EXIT"))
+				socket.send(stool.dumps("EXIT"))
 				break
 		else:
-			socket.send(json.dumps(mapfunc(req)))
+			socket.send(stool.dumps(mapfunc(req)))
 
 if __name__ is "__main__":
 	loadServer(sys.argv[1].decode("utf-8"))
