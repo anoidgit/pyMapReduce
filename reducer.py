@@ -2,7 +2,12 @@
 
 import sys
 
-import zmq, json
+import zmq
+
+try:
+	import msgpack as stool
+except:
+	import json as stool
 
 import threading
 
@@ -50,8 +55,8 @@ def getsockets(servl):
 	return [getsocket(servu) for servu in servl]
 
 def processUnit(socket, data):
-	socket.send(json.dumps(data))
-	return json.loads(socket.recv())
+	socket.send(stool.dumps(data))
+	return stool.loads(socket.recv())
 
 def sendCommand(connect, cmd):
 	return processUnit(connect, cmd)
