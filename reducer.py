@@ -34,12 +34,14 @@ def starthread(func, argv, run=True):
 		t.start()
 	return t
 
-def feedmapper(mappers):
+def infgen(lin):
 	while True:
-		for mapu in mappers:
-			yield mapu
+		for lu in lin:
+			yield lu
 
 def getsocket(serv):
+	if not serv.startswith("tcp://"):
+		serv = "tcp://"+serv
 	socket = zmq.Context().socket(zmq.REQ)
 	socket.connect(serv)
 	return socket
@@ -82,14 +84,15 @@ def oneReducer(mapperl):
 	global rscache
 	global idlck
 	global idpool
-	for mapper in mapperl:
+	while True:
 		while idpool:
-			doid = False
-			with idlck:
-				if idpool:
-					doid = idpool.pop()
-			if doid:
-				rscache[doid] = processUnit(mapper, srccache[doid])
+			for mapper in mapperl:
+				doid = False
+				with idlck:
+					if idpool:
+						doid = idpool.pop()
+				if doid:
+					rscache[doid] = processUnit(mapper, srccache[doid])
 
 def saver(writer):
 	global wcache
@@ -101,18 +104,18 @@ def saver(writer):
 def cacheManager(reader, writer, bsize, bubsize):
 	global srccache, rscache, idpool, nsavd, wcache
 	for cache in loadcache(reader, bubsize, bsize):
+		rscache = {}
 		srccache = trand(cache)
 		lsrc = len(cache)
 		idpool = set([i for i in xrange(lsrc)])
 		while len(rscache) != lsrc and wcache:
 			pass
 		wcache = tranl(rscache)
-		rscache = {}
 	writer.close()
 	sys.exit()
 
 def startCacheManager(reader, writer, bsize, bubsize):
-	return [starthread(saver, (writer)), starthread(cacheManager, (reader, writer, bsize, bubsize))]
+	return [starthread(cacheManager, (reader, writer, bsize, bubsize)), starthread(saver, (writer))]
 
 def startReduce(mapperc):
 	return starthread(oneReducer, (mapperc))
@@ -120,13 +123,12 @@ def startReduce(mapperc):
 def loadReducer(args):
 	reader, writer = getio(args[:2])
 	bsize, bubsize, nthread = [int(i) for i in args[2:5]]
-	mappers = feedmapper(getsockets(args[5:]))
+	mappers = infgen(getsockets(args[5:]))
 	tpool = []
 	tpool.extend(startCacheManager(reader, writer, bsize, bubsize))
 	for i in xrange(nthread):
 		tpool.append(startReduce(mappers))
-	for tu in tpool:
-		tu.join()
+	tpool[0].join()
 
 if __name__ == "__main__":
 	srccache = {}
