@@ -19,7 +19,7 @@ def loadServer(bindaddr):
 		bindaddr = "tcp://"+bindaddr
 	socket.bind(bindaddr)
 	while 1:
-		req = json.loads(socket.recv())
+		req = stool.loads(socket.recv())
 		if isinstance(req, str) or isinstance(req, unicode):
 			if req.lower().startswith("term"):
 				socket.send(stool.dumps("EXIT"))
