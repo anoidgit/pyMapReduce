@@ -22,5 +22,5 @@ def loadServer(bindaddr):
 		else:
 			socket.send(json.dumps(mapfunc(req)))
 
-if __name__ == "__main__":
+if __name__ is "__main__":
 	loadServer(sys.argv[1].decode("utf-8"))
