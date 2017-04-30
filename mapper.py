@@ -13,13 +13,12 @@ def loadServer(bindaddr):
 	if not bindaddr.startswith("tcp://"):
 		bindaddr = "tcp://"+bindaddr
 	socket.bind(bindaddr)
-	runsgn = True
-	while runsgn:
+	while 1:
 		req = json.loads(socket.recv())
 		if isinstance(req, str) or isinstance(req, unicode):
 			if req.lower().startswith("term"):
-				runsgn = False
 				socket.send(json.dumps("EXIT"))
+				break
 		else:
 			socket.send(json.dumps(mapfunc(req)))
 
