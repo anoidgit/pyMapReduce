@@ -1,11 +1,11 @@
 #!/bin/bash
 
-srcfile=weibo.txt
-rsfile=segrs.txt
+export srcfile=weibo.txt
+export rsfile=segrs.txt
 
-cachebatch=72
-batchperunit=36
-nthreads=6
+export cachebatch=72
+export batchperunit=36
+export nthreads=6
 
 #if you want to use pypy, use py rather than pyo
 python -O -m py_compile *.py 
